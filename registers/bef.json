@@ -1,0 +1,112 @@
+{
+  "columns": [
+    {
+      "name": "AEGTE_ID",
+      "type": "Utf8"
+    },
+    {
+      "name": "ALDER",
+      "type": "Int8"
+    },
+    {
+      "name": "ANTBOERNF",
+      "type": "Int8"
+    },
+    {
+      "name": "ANTBOERNH",
+      "type": "Int8"
+    },
+    {
+      "name": "ANTPERSF",
+      "type": "Int8"
+    },
+    {
+      "name": "ANTPERSH",
+      "type": "Int8"
+    },
+    {
+      "name": "BOP_VFRA",
+      "type": "Date"
+    },
+    {
+      "name": "CIVST",
+      "type": "Utf8"
+    },
+    {
+      "name": "CPRTJEK",
+      "type": "Int8"
+    },
+    {
+      "name": "CPRTYPE",
+      "type": "Int8"
+    },
+    {
+      "name": "E_FAELLE_ID",
+      "type": "Utf8"
+    },
+    {
+      "name": "FAMILIE_ID",
+      "type": "Utf8"
+    },
+    {
+      "name": "FAMILIE_TYPE",
+      "type": "UInt8"
+    },
+    {
+      "name": "FAR_ID",
+      "type": "Utf8"
+    },
+    {
+      "name": "FM_MARK",
+      "type": "Int8"
+    },
+    {
+      "name": "FOED_DAG",
+      "type": "Date"
+    },
+    {
+      "name": "HUSTYPE",
+      "type": "Int8"
+    },
+    {
+      "name": "IE_TYPE",
+      "type": "Utf8"
+    },
+    {
+      "name": "KOEN",
+      "type": "Utf8"
+    },
+    {
+      "name": "KOM",
+      "type": "Int8"
+    },
+    {
+      "name": "MOR_ID",
+      "type": "Utf8"
+    },
+    {
+      "name": "OPR_LAND",
+      "type": "Utf8"
+    },
+    {
+      "name": "PLADS",
+      "type": "Int8"
+    },
+    {
+      "name": "PNR",
+      "type": "Utf8"
+    },
+    {
+      "name": "REG",
+      "type": "Int8"
+    },
+    {
+      "name": "STATSB",
+      "type": "Int8"
+    },
+    {
+      "name": "VERSION",
+      "type": "Utf8"
+    }
+  ]
+}
