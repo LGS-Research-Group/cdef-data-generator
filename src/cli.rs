@@ -16,9 +16,13 @@ pub struct Cli {
     )]
     pub registers: Vec<String>,
 
-    /// Range of years to generate data for (format: START-END)
-    #[arg(long, env = "CDEF_YEARS", required = true)]
-    pub years: String,
+    /// Start year for data generation
+    #[arg(long, env = "CDEF_START_YEAR", required = true)]
+    pub start_year: i32,
+
+    /// End year for data generation (optional, if not provided, generates only for start year)
+    #[arg(long, env = "CDEF_END_YEAR")]
+    pub end_year: Option<i32>,
 
     /// Number of rows to generate per year
     #[arg(short, long, env = "CDEF_NUM_ROWS", default_value_t = 10000)]
@@ -42,24 +46,13 @@ impl Cli {
         Ok(Self::parse())
     }
 
-    pub fn parse_years(&self) -> Result<(i32, i32), crate::error::DataGeneratorError> {
-        let parts: Vec<&str> = self.years.split('-').collect();
-        if parts.len() != 2 {
-            return Err(crate::error::DataGeneratorError::Other(
-                "Invalid year range format. Use START-END".to_string(),
-            ));
-        }
-        let start_year = parts[0].parse::<i32>().map_err(|_| {
-            crate::error::DataGeneratorError::Other("Invalid start year".to_string())
-        })?;
-        let end_year = parts[1]
-            .parse::<i32>()
-            .map_err(|_| crate::error::DataGeneratorError::Other("Invalid end year".to_string()))?;
-        if start_year > end_year {
+    pub fn get_years(&self) -> Result<(i32, i32), crate::error::DataGeneratorError> {
+        let end_year = self.end_year.unwrap_or(self.start_year);
+        if self.start_year > end_year {
             return Err(crate::error::DataGeneratorError::Other(
                 "Start year must be less than or equal to end year".to_string(),
             ));
         }
-        Ok((start_year, end_year))
+        Ok((self.start_year, end_year))
     }
 }

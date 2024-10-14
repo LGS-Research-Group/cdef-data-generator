@@ -12,6 +12,8 @@ pub enum DataGeneratorError {
     Cli(#[from] clap::Error),
     #[error("Other error: {0}")]
     Other(String),
+    #[error("Invalid input: {0}")]
+    InvalidInput(String),
 }
 
 impl From<Box<dyn std::error::Error>> for DataGeneratorError {
