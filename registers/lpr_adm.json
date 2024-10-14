@@ -1,0 +1,31 @@
+{
+  "columns": [
+    { "name": "PNR", "type": "Utf8" },
+    { "name": "C_ADIAG", "type": "Utf8" },
+    { "name": "C_AFD", "type": "Utf8" },
+    { "name": "C_HAFD", "type": "Utf8" },
+    { "name": "C_HENM", "type": "Utf8" },
+    { "name": "C_HSGH", "type": "Utf8" },
+    { "name": "C_INDM", "type": "Utf8" },
+    { "name": "C_KOM", "type": "Utf8" },
+    { "name": "C_KONTAARS", "type": "Utf8" },
+    { "name": "C_PATTYPE", "type": "Utf8" },
+    { "name": "C_SGH", "type": "Utf8" },
+    { "name": "C_SPEC", "type": "Utf8" },
+    { "name": "C_UDM", "type": "Utf8" },
+    { "name": "CPRTJEK", "type": "Utf8" },
+    { "name": "CPRTYPE", "type": "Utf8" },
+    { "name": "D_HENDTO", "type": "Date" },
+    { "name": "D_INDDTO", "type": "Date" },
+    { "name": "D_UDDTO", "type": "Date" },
+    { "name": "K_AFD", "type": "Utf8" },
+    { "name": "RECNUM", "type": "Utf8" },
+    { "name": "V_ALDDG", "type": "Int32" },
+    { "name": "V_ALDER", "type": "Int32" },
+    { "name": "V_INDMINUT", "type": "Int32" },
+    { "name": "V_INDTIME", "type": "Int32" },
+    { "name": "V_SENGDAGE", "type": "Int32" },
+    { "name": "V_UDTIME", "type": "Int32" },
+    { "name": "VERSION", "type": "Utf8" }
+  ]
+}

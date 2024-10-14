@@ -1,0 +1,10 @@
+{
+  "columns": [
+    { "name": "C_DIAG", "type": "Utf8" },
+    { "name": "C_DIAGTYPE", "type": "Utf8" },
+    { "name": "C_TILDIAG", "type": "Utf8" },
+    { "name": "LEVERANCEDATO", "type": "Date" },
+    { "name": "RECNUM", "type": "Utf8" },
+    { "name": "VERSION", "type": "Utf8" }
+  ]
+}

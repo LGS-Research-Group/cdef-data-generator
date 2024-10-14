@@ -1,0 +1,24 @@
+{
+  "columns": [
+    { "name": "SORENHED_IND", "type": "Utf8" },
+    { "name": "SORENHED_HEN", "type": "Utf8" },
+    { "name": "SORENHED_ANS", "type": "Utf8" },
+    { "name": "DW_EK_KONTAKT", "type": "Utf8" },
+    { "name": "DW_EK_FORLOEB", "type": "Utf8" },
+    { "name": "CPR", "type": "Utf8" },
+    { "name": "dato_start", "type": "Date" },
+    { "name": "tidspunkt_start", "type": "Time" },
+    { "name": "dato_slut", "type": "Date" },
+    { "name": "tidspunkt_slut", "type": "Time" },
+    { "name": "aktionsdiagnose", "type": "Utf8" },
+    { "name": "kontaktaarsag", "type": "Utf8" },
+    { "name": "prioritet", "type": "Utf8" },
+    { "name": "kontakttype", "type": "Utf8" },
+    { "name": "henvisningsaarsag", "type": "Utf8" },
+    { "name": "henvisningsmaade", "type": "Utf8" },
+    { "name": "dato_behandling_start", "type": "Date" },
+    { "name": "tidspunkt_behandling_start", "type": "Time" },
+    { "name": "dato_indberetning", "type": "Date" },
+    { "name": "lprindberetningssytem", "type": "Utf8" }
+  ]
+}

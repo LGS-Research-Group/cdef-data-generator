@@ -15,7 +15,7 @@ use extract::{
 use generate::generate_from_json;
 
 const PROGRAM_NAME: &str = "rsfake";
-const DEFAULT_SCHEMA_FILE: &str = "registers/ind.json";
+const DEFAULT_SCHEMA_FILE: &str = "registers/lpr_adm.json";
 const DEFAULT_NO_ROWS: &str = "10000";
 const RAYON_NUM_THREADS: &str = "1";
 

@@ -1,5 +1,6 @@
-use chrono::NaiveDate;
+use chrono::{Datelike, NaiveDate, NaiveTime, Timelike};
 use once_cell::sync::Lazy;
+//use rand::distributions::{Distribution, Uniform};
 use rand::seq::SliceRandom;
 use rand::Rng;
 use serde::de::DeserializeOwned;
@@ -77,17 +78,40 @@ pub fn generate_from_json(
                 .and_then(|n| n.as_str())
                 .map_or(false, |name| name == "JOBKAT")
         });
-
         let is_ind_schema = columns_def.iter().any(|col| {
             col.get("name")
                 .and_then(|n| n.as_str())
                 .map_or(false, |name| name == "BESKST13")
         });
-
         let is_uddf_schema = columns_def.iter().any(|col| {
             col.get("name")
                 .and_then(|n| n.as_str())
                 .map_or(false, |name| name == "HFAUDD")
+        });
+        let is_lpr3_diagnoser_schema = columns_def.iter().any(|col| {
+            col.get("name")
+                .and_then(|n| n.as_str())
+                .map_or(false, |name| name == "diagnosekode")
+        });
+        let is_lpr3_kontakter_schema = columns_def.iter().any(|col| {
+            col.get("name")
+                .and_then(|n| n.as_str())
+                .map_or(false, |name| name == "DW_EK_KONTAKT")
+        });
+        let is_lpr_adm_schema = columns_def.iter().any(|col| {
+            col.get("name")
+                .and_then(|n| n.as_str())
+                .map_or(false, |name| name == "C_ADIAG")
+        });
+        let is_lpr_bes_schema = columns_def.iter().any(|col| {
+            col.get("name")
+                .and_then(|n| n.as_str())
+                .map_or(false, |name| name == "D_AMBDTO")
+        });
+        let is_lpr_diag_schema = columns_def.iter().any(|col| {
+            col.get("name")
+                .and_then(|n| n.as_str())
+                .map_or(false, |name| name == "C_DIAG")
         });
 
         for col_def in columns_def {
@@ -104,6 +128,16 @@ pub fn generate_from_json(
                 create_ind_series(col_name, no_rows)
             } else if is_uddf_schema {
                 create_uddf_series(col_name, no_rows)
+            } else if is_lpr3_diagnoser_schema {
+                create_lpr3_diagnoser_series(col_name, no_rows)
+            } else if is_lpr3_kontakter_schema {
+                create_lpr3_kontakter_series(col_name, no_rows)
+            } else if is_lpr_adm_schema {
+                create_lpr_adm_series(col_name, no_rows)
+            } else if is_lpr_bes_schema {
+                create_lpr_bes_series(col_name, no_rows)
+            } else if is_lpr_diag_schema {
+                create_lpr_diag_series(col_name, no_rows)
             } else {
                 create_bef_series(col_name, no_rows)
             };
@@ -111,6 +145,468 @@ pub fn generate_from_json(
         }
     }
     Ok(DataFrame::new(columns)?)
+}
+
+fn create_lpr_diag_series(col_name: &str, no_rows: usize) -> Series {
+    let col_name = PlSmallStr::from(col_name);
+
+    match col_name.as_str() {
+        "C_DIAG" => {
+            let data: Vec<String> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| {
+                    let letter = (b'A' + rand::thread_rng().gen_range(0..26)) as char;
+                    let number: u16 = rand::thread_rng().gen_range(0..100);
+                    format!("{}{:02}", letter, number)
+                })
+                .collect();
+            Series::new(col_name, data)
+        }
+        "C_DIAGTYPE" => {
+            let types = ["A", "B", "H", "M", "G"];
+            let data: Vec<String> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| types.choose(&mut rand::thread_rng()).unwrap().to_string())
+                .collect();
+            Series::new(col_name, data)
+        }
+        "C_TILDIAG" => {
+            let data: Vec<String> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| {
+                    if rand::thread_rng().gen_bool(0.7) {
+                        String::new()
+                    } else {
+                        let letter = (b'A' + rand::thread_rng().gen_range(0..26)) as char;
+                        let number: u16 = rand::thread_rng().gen_range(0..100);
+                        format!("{}{:02}", letter, number)
+                    }
+                })
+                .collect();
+            Series::new(col_name, data)
+        }
+        "LEVERANCEDATO" => {
+            let data: Vec<i32> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| {
+                    let year = rand::thread_rng().gen_range(2000..2023);
+                    let month = rand::thread_rng().gen_range(1..13);
+                    let day = rand::thread_rng().gen_range(1..29);
+                    let date = NaiveDate::from_ymd_opt(year, month, day).unwrap();
+                    (date.year() * 10000 + date.month() as i32 * 100 + date.day() as i32) as i32
+                })
+                .collect();
+            Series::new(col_name, data)
+        }
+        "RECNUM" => {
+            let data: Vec<String> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| {
+                    format!(
+                        "{:020}",
+                        rand::thread_rng().gen_range(1_u64..1_000_000_000_000_000_000_u64)
+                    )
+                })
+                .collect();
+            Series::new(col_name, data)
+        }
+        "VERSION" => {
+            let data: Vec<String> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| format!("{:04}", rand::thread_rng().gen_range(2000..2023)))
+                .collect();
+            Series::new(col_name, data)
+        }
+        _ => panic!("Unsupported LPR_DIAG column: {}", col_name),
+    }
+}
+
+fn create_lpr_bes_series(col_name: &str, no_rows: usize) -> Series {
+    let col_name = PlSmallStr::from(col_name);
+
+    match col_name.as_str() {
+        "D_AMBDTO" | "LEVERANCEDATO" => {
+            let data: Vec<i32> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| {
+                    let year = rand::thread_rng().gen_range(2000..2023);
+                    let month = rand::thread_rng().gen_range(1..13);
+                    let day = rand::thread_rng().gen_range(1..29);
+                    let date = NaiveDate::from_ymd_opt(year, month, day).unwrap();
+                    (date.year() * 10000 + date.month() as i32 * 100 + date.day() as i32) as i32
+                })
+                .collect();
+            Series::new(col_name, data)
+        }
+        "RECNUM" => {
+            let data: Vec<String> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| {
+                    format!(
+                        "{:020}",
+                        rand::thread_rng().gen_range(1_u64..1_000_000_000_000_000_000_u64)
+                    )
+                })
+                .collect();
+            Series::new(col_name, data)
+        }
+        "VERSION" => {
+            let data: Vec<String> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| format!("{:04}", rand::thread_rng().gen_range(2000..2023)))
+                .collect();
+            Series::new(col_name, data)
+        }
+        _ => panic!("Unsupported LPR_BES column: {}", col_name),
+    }
+}
+
+fn create_lpr_adm_series(col_name: &str, no_rows: usize) -> Series {
+    let col_name = PlSmallStr::from(col_name);
+
+    match col_name.as_str() {
+        "PNR" => {
+            let data: Vec<String> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| {
+                    format!(
+                        "{:010}",
+                        rand::thread_rng().gen_range(100000000_u32..999999999_u32)
+                    )
+                })
+                .collect();
+            Series::new(col_name, data)
+        }
+        "C_ADIAG" => {
+            let data: Vec<String> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| {
+                    let letter = (b'A' + rand::thread_rng().gen_range(0..26)) as char;
+                    let number: u16 = rand::thread_rng().gen_range(0..100);
+                    format!("{}{:02}", letter, number)
+                })
+                .collect();
+            Series::new(col_name, data)
+        }
+        "C_AFD" | "C_HAFD" | "K_AFD" => {
+            let data: Vec<String> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| format!("{:04}", rand::thread_rng().gen_range(1000..9999)))
+                .collect();
+            Series::new(col_name, data)
+        }
+        "C_HENM" | "C_INDM" | "C_KONTAARS" | "C_UDM" => {
+            let codes = ["A", "B", "C", "D", "E"];
+            let data: Vec<String> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| codes.choose(&mut rand::thread_rng()).unwrap().to_string())
+                .collect();
+            Series::new(col_name, data)
+        }
+        "C_HSGH" | "C_SGH" => {
+            let data: Vec<String> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| format!("{:04}", rand::thread_rng().gen_range(1000..9999)))
+                .collect();
+            Series::new(col_name, data)
+        }
+        "C_KOM" => {
+            let data: Vec<String> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| format!("{:03}", rand::thread_rng().gen_range(100..999)))
+                .collect();
+            Series::new(col_name, data)
+        }
+        "C_PATTYPE" => {
+            let types = ["0", "1", "2", "3"];
+            let data: Vec<String> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| types.choose(&mut rand::thread_rng()).unwrap().to_string())
+                .collect();
+            Series::new(col_name, data)
+        }
+        "C_SPEC" => {
+            let data: Vec<String> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| format!("{:03}", rand::thread_rng().gen_range(1..100)))
+                .collect();
+            Series::new(col_name, data)
+        }
+        "CPRTJEK" | "CPRTYPE" => {
+            let data: Vec<String> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| {
+                    if rand::thread_rng().gen_bool(0.5) {
+                        "V"
+                    } else {
+                        "U"
+                    }
+                    .to_string()
+                })
+                .collect();
+            Series::new(col_name, data)
+        }
+        "D_HENDTO" | "D_INDDTO" | "D_UDDTO" => {
+            let data: Vec<i32> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| {
+                    let year = rand::thread_rng().gen_range(2000..2023);
+                    let month = rand::thread_rng().gen_range(1..13);
+                    let day = rand::thread_rng().gen_range(1..29);
+                    let date = NaiveDate::from_ymd_opt(year, month, day).unwrap();
+                    (date.year() * 10000 + date.month() as i32 * 100 + date.day() as i32) as i32
+                })
+                .collect();
+            Series::new(col_name, data)
+        }
+        "RECNUM" => {
+            let data: Vec<String> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| {
+                    format!(
+                        "{:020}",
+                        rand::thread_rng().gen_range(1_u64..1_000_000_000_000_000_000_u64)
+                    )
+                })
+                .collect();
+            Series::new(col_name, data)
+        }
+        "V_ALDDG" => {
+            let data: Vec<i32> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| rand::thread_rng().gen_range(0..36500))
+                .collect();
+            Series::new(col_name, data)
+        }
+        "V_ALDER" => {
+            let data: Vec<i32> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| rand::thread_rng().gen_range(0..100))
+                .collect();
+            Series::new(col_name, data)
+        }
+        "V_INDMINUT" => {
+            let data: Vec<i32> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| rand::thread_rng().gen_range(0..60))
+                .collect();
+            Series::new(col_name, data)
+        }
+        "V_INDTIME" | "V_UDTIME" => {
+            let data: Vec<i32> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| rand::thread_rng().gen_range(0..24))
+                .collect();
+            Series::new(col_name, data)
+        }
+        "V_SENGDAGE" => {
+            let data: Vec<i32> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| rand::thread_rng().gen_range(0..100))
+                .collect();
+            Series::new(col_name, data)
+        }
+        "VERSION" => {
+            let data: Vec<String> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| format!("{:04}", rand::thread_rng().gen_range(2000..2023)))
+                .collect();
+            Series::new(col_name, data)
+        }
+        _ => panic!("Unsupported LPR_ADM column: {}", col_name),
+    }
+}
+
+fn create_lpr3_kontakter_series(col_name: &str, no_rows: usize) -> Series {
+    let col_name = PlSmallStr::from(col_name);
+
+    match col_name.as_str() {
+        "SORENHED_IND" | "SORENHED_HEN" | "SORENHED_ANS" => {
+            let data: Vec<String> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| format!("{:06}", rand::thread_rng().gen_range(100000..999999)))
+                .collect();
+            Series::new(col_name, data)
+        }
+        "DW_EK_KONTAKT" | "DW_EK_FORLOEB" => {
+            let data: Vec<String> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| {
+                    format!(
+                        "{:020}",
+                        rand::thread_rng().gen_range(1_u64..1_000_000_000_000_000_000_u64)
+                    )
+                })
+                .collect();
+            Series::new(col_name, data)
+        }
+        "CPR" => {
+            let data: Vec<String> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| {
+                    format!(
+                        "{:010}",
+                        rand::thread_rng().gen_range(100000000_u32..999999999_u32)
+                    )
+                })
+                .collect();
+            Series::new(col_name, data)
+        }
+        "dato_start" | "dato_slut" | "dato_behandling_start" | "dato_indberetning" => {
+            let data: Vec<i32> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| {
+                    let year = rand::thread_rng().gen_range(2000..2023);
+                    let month = rand::thread_rng().gen_range(1..13);
+                    let day = rand::thread_rng().gen_range(1..29);
+                    let date = NaiveDate::from_ymd_opt(year, month, day).unwrap();
+                    (date.year() * 10000 + date.month() as i32 * 100 + date.day() as i32) as i32
+                })
+                .collect();
+            Series::new(col_name, data)
+        }
+        "tidspunkt_start" | "tidspunkt_slut" | "tidspunkt_behandling_start" => {
+            let data: Vec<i32> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| {
+                    let hour = rand::thread_rng().gen_range(0..24);
+                    let minute = rand::thread_rng().gen_range(0..60);
+                    let second = rand::thread_rng().gen_range(0..60);
+                    let time = NaiveTime::from_hms_opt(hour, minute, second).unwrap();
+                    (time.hour() * 3600 + time.minute() * 60 + time.second()) as i32
+                })
+                .collect();
+            Series::new(col_name, data)
+        }
+        "aktionsdiagnose" => {
+            let data: Vec<String> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| {
+                    let letter = (b'A' + rand::thread_rng().gen_range(0..26)) as char;
+                    let number: u16 = rand::thread_rng().gen_range(0..100);
+                    format!("{}{:02}", letter, number)
+                })
+                .collect();
+            Series::new(col_name, data)
+        }
+        "kontaktaarsag" => {
+            let aarsager = ["ALCA00", "ALCA10", "ALCA20", "ALCA30", "ALCA40"];
+            let data: Vec<String> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| {
+                    aarsager
+                        .choose(&mut rand::thread_rng())
+                        .unwrap()
+                        .to_string()
+                })
+                .collect();
+            Series::new(col_name, data)
+        }
+        "prioritet" => {
+            let prioriteter = ["ATA1", "ATA2", "ATA3"];
+            let data: Vec<String> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| {
+                    prioriteter
+                        .choose(&mut rand::thread_rng())
+                        .unwrap()
+                        .to_string()
+                })
+                .collect();
+            Series::new(col_name, data)
+        }
+        "kontakttype" => {
+            let typer = ["ALCA00", "ALCA10", "ALCA20", "ALCA30", "ALCA40"];
+            let data: Vec<String> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| typer.choose(&mut rand::thread_rng()).unwrap().to_string())
+                .collect();
+            Series::new(col_name, data)
+        }
+        "henvisningsaarsag" | "henvisningsmaade" => {
+            let aarsager = ["ALCA00", "ALCA10", "ALCA20", "ALCA30", "ALCA40"];
+            let data: Vec<String> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| {
+                    aarsager
+                        .choose(&mut rand::thread_rng())
+                        .unwrap()
+                        .to_string()
+                })
+                .collect();
+            Series::new(col_name, data)
+        }
+        "lprindberetningssytem" => {
+            let systems = ["PAS", "OPUS", "COSMIC", "EPJ", "MidtEPJ"];
+            let data: Vec<String> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| systems.choose(&mut rand::thread_rng()).unwrap().to_string())
+                .collect();
+            Series::new(col_name, data)
+        }
+        _ => panic!("Unsupported LPR3_KONTAKTER column: {}", col_name),
+    }
+}
+
+fn create_lpr3_diagnoser_series(col_name: &str, no_rows: usize) -> Series {
+    let col_name = PlSmallStr::from(col_name);
+
+    match col_name.as_str() {
+        "DW_EK_KONTAKT" => {
+            let data: Vec<String> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| {
+                    format!(
+                        "{:020}",
+                        rand::thread_rng().gen_range(1_u64..1_000_000_000_000_000_000_u64)
+                    )
+                })
+                .collect();
+            Series::new(col_name, data)
+        }
+        "diagnosekode" | "diagnosekode_parent" => {
+            let data: Vec<String> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| {
+                    let letter = (b'A' + rand::thread_rng().gen_range(0..26)) as char;
+                    let number: u16 = rand::thread_rng().gen_range(0..100);
+                    format!("{}{:02}", letter, number)
+                })
+                .collect();
+            Series::new(col_name, data)
+        }
+        "diagnosetype" | "diagnosetype_parent" => {
+            let types = ["A", "B", "H", "M", "G"];
+            let data: Vec<String> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| types.choose(&mut rand::thread_rng()).unwrap().to_string())
+                .collect();
+            Series::new(col_name, data)
+        }
+        "senere_afkraeftet" => {
+            let data: Vec<String> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| {
+                    if rand::thread_rng().gen_bool(0.1) {
+                        "1"
+                    } else {
+                        "0"
+                    }
+                    .to_string()
+                })
+                .collect();
+            Series::new(col_name, data)
+        }
+        "lprindberetningssystem" => {
+            let systems = ["LPR3", "OPUS", "COSMIC", "EPJ", "MidtEPJ"];
+            let data: Vec<String> = (0..no_rows)
+                .into_par_iter()
+                .map(|_| systems.choose(&mut rand::thread_rng()).unwrap().to_string())
+                .collect();
+            Series::new(col_name, data)
+        }
+        _ => panic!("Unsupported LPR3_DIAGNOSER column: {}", col_name),
+    }
 }
 
 fn create_akm_series(col_name: &str, no_rows: usize) -> Series {

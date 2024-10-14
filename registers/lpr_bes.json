@@ -1,0 +1,8 @@
+{
+  "columns": [
+    { "name": "D_AMBDTO", "type": "Date" },
+    { "name": "LEVERANCEDATO", "type": "Date" },
+    { "name": "RECNUM", "type": "Utf8" },
+    { "name": "VERSION", "type": "Utf8" }
+  ]
+}

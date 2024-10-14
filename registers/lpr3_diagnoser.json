@@ -1,0 +1,11 @@
+{
+  "columns": [
+    { "name": "DW_EK_KONTAKT", "type": "Utf8" },
+    { "name": "diagnosekode", "type": "Utf8" },
+    { "name": "diagnosetype", "type": "Utf8" },
+    { "name": "senere_afkraeftet", "type": "Utf8" },
+    { "name": "diagnosekode_parent", "type": "Utf8" },
+    { "name": "diagnosetype_parent", "type": "Utf8" },
+    { "name": "lprindberetningssystem", "type": "Utf8" }
+  ]
+}
