@@ -1,0 +1,12 @@
+{
+  "columns": [
+    { "name": "PNR", "type": "Utf8" },
+    { "name": "SOCIO", "type": "Int8" },
+    { "name": "SOCIO02", "type": "Int8" },
+    { "name": "SOCIO13", "type": "Int8" },
+    { "name": "CPRTJEK", "type": "Utf8" },
+    { "name": "CPRTYPE", "type": "Utf8" },
+    { "name": "VERSION", "type": "Utf8" },
+    { "name": "SENR", "type": "Utf8" }
+  ]
+}

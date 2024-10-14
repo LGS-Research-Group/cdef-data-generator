@@ -15,7 +15,7 @@ use extract::{
 use generate::generate_from_json;
 
 const PROGRAM_NAME: &str = "rsfake";
-const DEFAULT_SCHEMA_FILE: &str = "schema.json";
+const DEFAULT_SCHEMA_FILE: &str = "akm.json";
 const DEFAULT_NO_ROWS: &str = "10000";
 const RAYON_NUM_THREADS: &str = "1";
 
