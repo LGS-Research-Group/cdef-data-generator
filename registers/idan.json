@@ -1,0 +1,15 @@
+{
+  "columns": [
+    { "name": "ARBGNR", "type": "Utf8" },
+    { "name": "ARBNR", "type": "Int8" },
+    { "name": "CPRTJEK", "type": "Int8" },
+    { "name": "CPRTYPE", "type": "Int8" },
+    { "name": "CVRNR", "type": "Utf8" },
+    { "name": "JOBKAT", "type": "Int8" },
+    { "name": "JOBLON", "type": "Float64" },
+    { "name": "LBNR", "type": "Utf8" },
+    { "name": "PNR", "type": "Utf8" },
+    { "name": "STILL", "type": "Utf8" },
+    { "name": "TILKNYT", "type": "Int8" }
+  ]
+}

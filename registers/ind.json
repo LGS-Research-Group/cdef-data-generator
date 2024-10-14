@@ -1,0 +1,12 @@
+{
+  "columns": [
+    { "name": "BESKST13", "type": "Int8" },
+    { "name": "CPRTJEK", "type": "Utf8" },
+    { "name": "CPRTYPE", "type": "Utf8" },
+    { "name": "LOENMV_13", "type": "Float64" },
+    { "name": "PERINDKIALT_13", "type": "Float64" },
+    { "name": "PNR", "type": "Utf8" },
+    { "name": "PRE_SOCIO", "type": "Int8" },
+    { "name": "VERSION", "type": "Utf8" }
+  ]
+}
