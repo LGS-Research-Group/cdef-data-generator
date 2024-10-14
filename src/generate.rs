@@ -1,17 +1,21 @@
 use chrono::{Datelike, NaiveDate, NaiveTime, Timelike};
 use once_cell::sync::Lazy;
-//use rand::distributions::{Distribution, Uniform};
+
+use crate::error::DataGeneratorError;
 use rand::seq::SliceRandom;
 use rand::Rng;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::fs;
+use std::path::{Path, PathBuf};
+
+use crate::write::write_dataframe_to_single_parquet;
 
 use polars::prelude::*;
 use rayon::prelude::*;
 
-pub fn load_json(json_file: &str) -> Result<Value, Box<dyn std::error::Error>> {
+pub fn load_json(json_file: &Path) -> Result<Value, Box<dyn std::error::Error>> {
     let json_str = fs::read_to_string(json_file)?;
     let json: Value = serde_json::from_str(&json_str)?;
     Ok(json)
@@ -59,92 +63,88 @@ static PRE_SOCIO: Lazy<HashMap<i32, String>> =
     Lazy::new(|| load_mapping("mappings/pre_socio.json"));
 static BESKST13: Lazy<HashMap<i32, String>> = Lazy::new(|| load_mapping("mappings/beskst13.json"));
 
-pub fn generate_from_json(
-    json_file: &str,
+pub fn generate_data(
+    registers: &[String],
     no_rows: usize,
-) -> Result<DataFrame, Box<dyn std::error::Error>> {
-    let json = load_json(json_file)?;
-
-    let mut columns = Vec::new();
-
-    if let Some(columns_def) = json.get("columns").and_then(|c| c.as_array()) {
-        let is_akm_schema = columns_def.iter().any(|col| {
-            col.get("name")
-                .and_then(|n| n.as_str())
-                .map_or(false, |name| name == "SOCIO13")
-        });
-        let is_idan_schema = columns_def.iter().any(|col| {
-            col.get("name")
-                .and_then(|n| n.as_str())
-                .map_or(false, |name| name == "JOBKAT")
-        });
-        let is_ind_schema = columns_def.iter().any(|col| {
-            col.get("name")
-                .and_then(|n| n.as_str())
-                .map_or(false, |name| name == "BESKST13")
-        });
-        let is_uddf_schema = columns_def.iter().any(|col| {
-            col.get("name")
-                .and_then(|n| n.as_str())
-                .map_or(false, |name| name == "HFAUDD")
-        });
-        let is_lpr3_diagnoser_schema = columns_def.iter().any(|col| {
-            col.get("name")
-                .and_then(|n| n.as_str())
-                .map_or(false, |name| name == "diagnosekode")
-        });
-        let is_lpr3_kontakter_schema = columns_def.iter().any(|col| {
-            col.get("name")
-                .and_then(|n| n.as_str())
-                .map_or(false, |name| name == "DW_EK_KONTAKT")
-        });
-        let is_lpr_adm_schema = columns_def.iter().any(|col| {
-            col.get("name")
-                .and_then(|n| n.as_str())
-                .map_or(false, |name| name == "C_ADIAG")
-        });
-        let is_lpr_bes_schema = columns_def.iter().any(|col| {
-            col.get("name")
-                .and_then(|n| n.as_str())
-                .map_or(false, |name| name == "D_AMBDTO")
-        });
-        let is_lpr_diag_schema = columns_def.iter().any(|col| {
-            col.get("name")
-                .and_then(|n| n.as_str())
-                .map_or(false, |name| name == "C_DIAG")
-        });
-
-        for col_def in columns_def {
-            let col_name = col_def
-                .get("name")
-                .and_then(|n| n.as_str())
-                .unwrap_or_default();
-
-            let series = if is_akm_schema {
-                create_akm_series(col_name, no_rows)
-            } else if is_idan_schema {
-                create_idan_series(col_name, no_rows)
-            } else if is_ind_schema {
-                create_ind_series(col_name, no_rows)
-            } else if is_uddf_schema {
-                create_uddf_series(col_name, no_rows)
-            } else if is_lpr3_diagnoser_schema {
-                create_lpr3_diagnoser_series(col_name, no_rows)
-            } else if is_lpr3_kontakter_schema {
-                create_lpr3_kontakter_series(col_name, no_rows)
-            } else if is_lpr_adm_schema {
-                create_lpr_adm_series(col_name, no_rows)
-            } else if is_lpr_bes_schema {
-                create_lpr_bes_series(col_name, no_rows)
-            } else if is_lpr_diag_schema {
-                create_lpr_diag_series(col_name, no_rows)
-            } else {
-                create_bef_series(col_name, no_rows)
-            };
-            columns.push(series);
-        }
+    years: &[i32],
+    output_dir: &Path,
+) -> Result<(), DataGeneratorError> {
+    for register in registers {
+        println!("Generating data for register: {}", register);
+        generate_from_json(register, no_rows, years, output_dir)?;
     }
-    Ok(DataFrame::new(columns)?)
+    Ok(())
+}
+
+pub fn generate_from_json(
+    register: &str,
+    no_rows: usize,
+    years: &[i32],
+    output_dir: &Path,
+) -> Result<(), DataGeneratorError> {
+    let schema_dir = PathBuf::from("schemas");
+    let json_file = schema_dir.join(format!("{}.json", register));
+
+    if !json_file.exists() {
+        return Err(DataGeneratorError::Other(format!(
+            "Schema file for register '{}' not found at path: {}",
+            register,
+            json_file.display()
+        )));
+    }
+
+    let json = load_json(&json_file).map_err(|e| {
+        DataGeneratorError::Other(format!(
+            "Failed to load JSON for register '{}': {}",
+            register, e
+        ))
+    })?;
+
+    // Create directory for the register
+    let register_dir = output_dir.join(register);
+    std::fs::create_dir_all(&register_dir).map_err(|e| {
+        DataGeneratorError::Other(format!(
+            "Failed to create directory for register '{}': {}",
+            register, e
+        ))
+    })?;
+
+    for &year in years {
+        let mut columns = Vec::new();
+
+        if let Some(columns_def) = json.get("columns").and_then(|c| c.as_array()) {
+            for col_def in columns_def {
+                let col_name = col_def
+                    .get("name")
+                    .and_then(|n| n.as_str())
+                    .unwrap_or_default();
+
+                let series = match register {
+                    "akm" => create_akm_series(col_name, no_rows),
+                    "idan" => create_idan_series(col_name, no_rows),
+                    "ind" => create_ind_series(col_name, no_rows),
+                    "uddf" => create_uddf_series(col_name, no_rows),
+                    "lpr3_diagnoser" => create_lpr3_diagnoser_series(col_name, no_rows),
+                    "lpr3_kontakter" => create_lpr3_kontakter_series(col_name, no_rows),
+                    "lpr_adm" => create_lpr_adm_series(col_name, no_rows),
+                    "lpr_bes" => create_lpr_bes_series(col_name, no_rows),
+                    "lpr_diag" => create_lpr_diag_series(col_name, no_rows),
+                    _ => create_bef_series(col_name, no_rows),
+                };
+                columns.push(series);
+            }
+        }
+
+        let df = DataFrame::new(columns)?;
+
+        // Write DataFrame to a Parquet file
+        let file_name = format!("{}.parquet", year);
+        let file_path = register_dir.join(file_name);
+        write_dataframe_to_single_parquet(&mut df.clone(), &file_path)?;
+        println!("Generated data for register '{}' year {}", register, year);
+    }
+
+    Ok(())
 }
 
 fn create_lpr_diag_series(col_name: &str, no_rows: usize) -> Series {
