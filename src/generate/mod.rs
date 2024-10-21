@@ -1,4 +1,6 @@
 pub mod mappings;
+pub mod pnr;
+pub mod recnum;
 pub mod utils;
 
 use crate::error::DataGeneratorError;
@@ -71,11 +73,11 @@ pub fn generate_from_json(
                     "ind" => create_ind_series(col_name, no_rows),
                     "uddf" => create_uddf_series(col_name, no_rows),
                     "lpr3_diagnoser" => create_lpr3_diagnoser_series(col_name, no_rows),
-                    "lpr3_kontakter" => create_lpr3_kontakter_series(col_name, no_rows),
-                    "lpr_adm" => create_lpr_adm_series(col_name, no_rows),
-                    "lpr_bes" => create_lpr_bes_series(col_name, no_rows),
-                    "lpr_diag" => create_lpr_diag_series(col_name, no_rows),
-                    _ => create_bef_series(col_name, no_rows),
+                    "lpr3_kontakter" => create_lpr3_kontakter_series(col_name, no_rows, year),
+                    "lpr_adm" => create_lpr_adm_series(col_name, no_rows, year),
+                    "lpr_bes" => create_lpr_bes_series(col_name, no_rows, year),
+                    "lpr_diag" => create_lpr_diag_series(col_name, no_rows, year),
+                    _ => create_bef_series(col_name, no_rows, year),
                 };
                 columns.push(series);
             }
@@ -84,7 +86,11 @@ pub fn generate_from_json(
         let df = DataFrame::new(columns)?;
 
         // Write DataFrame to a Parquet file
-        let file_name = format!("{}.parquet", year);
+        let file_name = if register == "bef" {
+            format!("{}12.parquet", year)
+        } else {
+            format!("{}.parquet", year)
+        };
         let file_path = register_dir.join(file_name);
         write_dataframe_to_single_parquet(&mut df.clone(), &file_path)?;
         println!("Generated data for register '{}' year {}", register, year);

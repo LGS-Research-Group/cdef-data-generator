@@ -1,28 +1,16 @@
-use crate::generate::mappings::SCD;
+use crate::generate::pnr::get_pnr_for_birth_date;
+use crate::generate::recnum::generate_recnum;
+use crate::generate::recnum::get_recnum_for_pnr;
+use crate::generate::utils::generate_date_for_year;
+use crate::generate::utils::get_random_diagnosis;
+use crate::registers::bef::create_bef_series;
 use chrono::NaiveDate;
 use polars::prelude::*;
 use rand::seq::SliceRandom;
 use rand::Rng;
 use rayon::prelude::*;
 
-fn get_random_diagnosis() -> String {
-    let mut rng = rand::thread_rng();
-    if rng.gen_bool(0.9) {
-        // 90% chance of using original method
-        let letter = (b'A' + rng.gen_range(0..26)) as char;
-        let number: u16 = rng.gen_range(0..100);
-        format!("{}{:02}", letter, number)
-    } else {
-        // 10% chance of using SCD mapping
-        SCD.keys()
-            .collect::<Vec<_>>()
-            .choose(&mut rng)
-            .unwrap()
-            .to_string()
-    }
-}
-
-pub fn create_lpr_diag_series(col_name: &str, no_rows: usize) -> Series {
+pub fn create_lpr_diag_series(col_name: &str, no_rows: usize, year: i32) -> Series {
     let col_name = PlSmallStr::from(col_name);
 
     match col_name.as_str() {
@@ -51,25 +39,17 @@ pub fn create_lpr_diag_series(col_name: &str, no_rows: usize) -> Series {
         "LEVERANCEDATO" => {
             let data: Vec<String> = (0..no_rows)
                 .into_par_iter()
-                .map(|_| {
-                    let year = rand::thread_rng().gen_range(2000..2023);
-                    let month = rand::thread_rng().gen_range(1..13);
-                    let day = rand::thread_rng().gen_range(1..29);
-                    let date = NaiveDate::from_ymd_opt(year, month, day).unwrap();
-                    date.format("%Y-%m-%d").to_string()
-                })
+                .map(|_| generate_date_for_year(year))
                 .collect();
             Series::new(col_name, data)
         }
         "RECNUM" => {
-            let data: Vec<String> = (0..no_rows)
-                .into_par_iter()
-                .map(|_| {
-                    format!(
-                        "{:020}",
-                        rand::thread_rng().gen_range(1_u64..1_000_000_000_000_000_000_u64)
-                    )
-                })
+            let pnrs = create_bef_series("PNR", no_rows, year);
+            let data: Vec<String> = pnrs
+                .str()
+                .unwrap()
+                .into_iter()
+                .map(|pnr| get_recnum_for_pnr(pnr.unwrap(), year))
                 .collect();
             Series::new(col_name, data)
         }
@@ -84,32 +64,24 @@ pub fn create_lpr_diag_series(col_name: &str, no_rows: usize) -> Series {
     }
 }
 
-pub fn create_lpr_bes_series(col_name: &str, no_rows: usize) -> Series {
+pub fn create_lpr_bes_series(col_name: &str, no_rows: usize, year: i32) -> Series {
     let col_name = PlSmallStr::from(col_name);
 
     match col_name.as_str() {
         "D_AMBDTO" | "LEVERANCEDATO" => {
             let data: Vec<String> = (0..no_rows)
                 .into_par_iter()
-                .map(|_| {
-                    let year = rand::thread_rng().gen_range(2000..2023);
-                    let month = rand::thread_rng().gen_range(1..13);
-                    let day = rand::thread_rng().gen_range(1..29);
-                    let date = NaiveDate::from_ymd_opt(year, month, day).unwrap();
-                    date.format("%Y-%m-%d").to_string()
-                })
+                .map(|_| generate_date_for_year(year))
                 .collect();
             Series::new(col_name, data)
         }
         "RECNUM" => {
-            let data: Vec<String> = (0..no_rows)
-                .into_par_iter()
-                .map(|_| {
-                    format!(
-                        "{:020}",
-                        rand::thread_rng().gen_range(1_u64..1_000_000_000_000_000_000_u64)
-                    )
-                })
+            let pnrs = create_bef_series("PNR", no_rows, year);
+            let data: Vec<String> = pnrs
+                .str()
+                .unwrap()
+                .into_iter()
+                .map(|pnr| get_recnum_for_pnr(pnr.unwrap(), year))
                 .collect();
             Series::new(col_name, data)
         }
@@ -124,7 +96,7 @@ pub fn create_lpr_bes_series(col_name: &str, no_rows: usize) -> Series {
     }
 }
 
-pub fn create_lpr_adm_series(col_name: &str, no_rows: usize) -> Series {
+pub fn create_lpr_adm_series(col_name: &str, no_rows: usize, year: i32) -> Series {
     let col_name = PlSmallStr::from(col_name);
 
     match col_name.as_str() {
@@ -132,10 +104,13 @@ pub fn create_lpr_adm_series(col_name: &str, no_rows: usize) -> Series {
             let data: Vec<String> = (0..no_rows)
                 .into_par_iter()
                 .map(|_| {
-                    format!(
-                        "{:010}",
-                        rand::thread_rng().gen_range(100000000_u32..999999999_u32)
+                    let birth_date = NaiveDate::from_ymd_opt(
+                        year - rand::thread_rng().gen_range(0..100),
+                        rand::thread_rng().gen_range(1..=12),
+                        rand::thread_rng().gen_range(1..=28),
                     )
+                    .unwrap();
+                    get_pnr_for_birth_date(birth_date)
                 })
                 .collect();
             Series::new(col_name, data)
@@ -208,25 +183,14 @@ pub fn create_lpr_adm_series(col_name: &str, no_rows: usize) -> Series {
         "D_HENDTO" | "D_INDDTO" | "D_UDDTO" => {
             let data: Vec<String> = (0..no_rows)
                 .into_par_iter()
-                .map(|_| {
-                    let year = rand::thread_rng().gen_range(2000..2023);
-                    let month = rand::thread_rng().gen_range(1..13);
-                    let day = rand::thread_rng().gen_range(1..29);
-                    let date = NaiveDate::from_ymd_opt(year, month, day).unwrap();
-                    date.format("%Y-%m-%d").to_string()
-                })
+                .map(|_| generate_date_for_year(year))
                 .collect();
             Series::new(col_name, data)
         }
         "RECNUM" => {
             let data: Vec<String> = (0..no_rows)
                 .into_par_iter()
-                .map(|_| {
-                    format!(
-                        "{:020}",
-                        rand::thread_rng().gen_range(1_u64..1_000_000_000_000_000_000_u64)
-                    )
-                })
+                .map(|_| generate_recnum())
                 .collect();
             Series::new(col_name, data)
         }

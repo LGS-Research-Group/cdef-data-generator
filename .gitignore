@@ -1,2 +1,4 @@
 /target
 /output
+generate_registerdata.sh
+sks_browser.tsv
